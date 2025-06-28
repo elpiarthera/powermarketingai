@@ -1,22 +1,25 @@
-# YouPac AI - YouTube Content Creation Assistant
+# VidCraft AI - Video Content Creation Suite
 
-An AI-powered platform that helps YouTube creators generate compelling titles, descriptions, thumbnails, and social media posts from their video content. Built with React Router v7, Convex, and OpenAI.
+An AI-powered platform that helps content creators generate compelling titles, descriptions, thumbnails, social media posts, and SEO-optimized blog posts from their video content. Built with React Router v7, Convex, and OpenAI.
 
 ## Features
 
 ### Core Functionality
 - 🎬 **Video Upload & Processing** - Upload videos up to 1GB with automatic transcription
-- 🤖 **AI Content Generation** - Generate titles, descriptions, thumbnails, and tweets
+- 🤖 **AI Content Generation** - Generate titles, descriptions, thumbnails, social posts, and blog content
 - 🎨 **Visual Canvas Interface** - Drag-and-drop nodes for content workflow
 - 💬 **Smart Chat Integration** - Chat with AI agents to refine content
-- 👁️ **Content Preview** - See how content looks on YouTube and Twitter/X
+- 👁️ **Content Preview** - See how content looks on YouTube, Twitter/X, LinkedIn, and as blog posts
 - 🔗 **Share System** - Share read-only canvas views with collaborators
+- 🌐 **Content Scraping** - Import content from URLs for blog post generation
 
 ### AI Agents
 - 📝 **Title Agent** - Creates catchy, SEO-optimized video titles
 - 📄 **Description Agent** - Writes comprehensive video descriptions
 - 🖼️ **Thumbnail Agent** - Generates thumbnail concepts and images with DALL-E 3
 - 🐦 **Social Media Agent** - Creates Twitter/X threads for video promotion
+- 💼 **LinkedIn Agent** - Generates professional posts for LinkedIn networking
+- 📰 **Blog Generator** - Creates SEO-optimized blog posts with keyword integration
 
 ### Technical Features
 - 🚀 **React Router v7** - Modern full-stack React framework
@@ -26,6 +29,7 @@ An AI-powered platform that helps YouTube creators generate compelling titles, d
 - 🔐 **Authentication** - Secure user management with Clerk
 - 📱 **Responsive Design** - Works seamlessly on all devices
 - 🚢 **Vercel Ready** - Optimized for one-click deployment
+- 🎯 **Consistent Icons** - FileText icons for content generators (blog) and brand icons for platforms (LinkedIn)
 
 ## Tech Stack
 
@@ -41,6 +45,7 @@ An AI-powered platform that helps YouTube creators generate compelling titles, d
 - **Convex** - Real-time database and serverless functions
 - **Clerk** - Authentication and user management
 - **OpenAI** - GPT-4 for content generation, DALL-E 3 for thumbnails
+- **Firecrawl** - Web content scraping for blog post generation
 - **ElevenLabs** - Advanced speech-to-text transcription
 - **FFmpeg** - Video processing and audio extraction
 
@@ -90,6 +95,9 @@ OPENAI_API_KEY=your_openai_api_key_here
 # ElevenLabs Configuration
 ELEVENLABS_API_KEY=your_elevenlabs_api_key_here
 
+# Firecrawl Configuration (for blog content scraping)
+FIRECRAWL_API_KEY=your_firecrawl_api_key_here
+
 # Frontend URL
 FRONTEND_URL=http://localhost:5173
 ```
@@ -103,6 +111,7 @@ npx convex dev
 5. Set up environment variables in Convex dashboard:
    - `OPENAI_API_KEY`
    - `ELEVENLABS_API_KEY`
+   - `FIRECRAWL_API_KEY`
 
 ### Development
 
@@ -113,6 +122,45 @@ npm run dev
 ```
 
 Your application will be available at `http://localhost:5173`.
+
+## New Feature: Blog Post & SEO Optimization
+
+### Overview
+Generate SEO-optimized blog posts effortlessly using the Blog Generator agent. Transform video content, topics, or scraped web content into comprehensive, keyword-rich blog posts.
+
+### Key Features
+- **SEO-Optimized Content**: Automatically generates titles (50-60 characters), meta descriptions (150-160 characters), and integrates 3-5 relevant keywords
+- **Multiple Input Sources**: 
+  - Manual topic input (e.g., "How to Scale a SaaS Startup")
+  - Video transcript import from uploaded videos
+  - URL scraping using Firecrawl API for web content
+- **Structured Output**: Professional blog posts with H2/H3 headings, introduction, main sections, and conclusion
+- **Export Options**: Copy to clipboard (full post, HTML, or Markdown) and export as .md files
+- **Link Suggestions**: AI-generated internal/external link recommendations
+
+### Optimizations
+- **Query Performance**: Query in `convex/videos.ts` refactored to use `.withIndex("by_user", ...)` for improved performance and consistency (December 2024)
+- **API Reliability**: Added API key validation in `convex/scrape.ts` to prevent runtime errors (December 2024)
+- **Robust Scraping**: Refactored retry logic with exponential backoff for reliable Firecrawl integration (December 2024)
+- **Enhanced Blog Generation**: Increased `max_tokens` to 3500 in `convex/prompts/blog.ts` to support 800-1,200 word posts (December 2024)
+- **Blog API Validation**: Added API key validation in `convex/prompts/blog.ts` to prevent runtime errors (December 2024)
+
+### User Workflow
+1. **Drag Blog Agent** from the sidebar to the canvas
+2. **Add Content Source** via the auto-created SourceNode:
+   - Enter a topic manually
+   - Paste a URL and click "Scrape Content"  
+   - Select a video to import its transcript
+3. **Generate Blog Post** by clicking the Generate button
+4. **Preview & Export** using the realistic blog post preview with SEO elements
+5. **Copy or Export** content in your preferred format
+
+### V2 Roadmap
+- **Keyword Suggestion API**: Integration with Google Keyword Planner for dynamic SEO optimization
+- **Content Scoring**: Readability analysis and SEO optimization suggestions
+- **Custom Preferences**: Tone/style preferences from user profiles
+- **Video Thumbnails**: Optional thumbnail support for blog posts from video transcripts
+- **A/B Testing**: Multiple blog variations for performance testing
 
 ## Building for Production
 

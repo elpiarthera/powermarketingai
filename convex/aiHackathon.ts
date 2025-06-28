@@ -11,7 +11,9 @@ export const generateContentSimple = action({
       v.literal("title"),
       v.literal("description"),
       v.literal("thumbnail"),
-      v.literal("tweets")
+      v.literal("tweets"),
+      v.literal("linkedin"),
+      v.literal("blog")
     ),
     videoId: v.optional(v.id("videos")),
     videoData: v.object({
@@ -92,6 +94,8 @@ export const generateContentSimple = action({
         description: { temperature: 0.7, maxTokens: 150 }, // Concise 2-line benefits
         thumbnail: { temperature: 0.9, maxTokens: 400 },   // Very creative visuals
         tweets: { temperature: 0.8, maxTokens: 200 },      // Simple 2-tweet format
+        linkedin: { temperature: 0.7, maxTokens: 300 },    // Professional LinkedIn posts
+        blog: { temperature: 0.7, maxTokens: 2000 },       // Comprehensive blog posts
       };
 
       const params = generationParams[args.agentType as keyof typeof generationParams] 
@@ -269,6 +273,46 @@ Tweet 2:
 Here's how to never write a syntax error again: [link]
 
 Keep it SIMPLE and NATURAL - like you're telling a friend about something cool.`,
+
+    linkedin: `You are an expert B2B content strategist specializing in LinkedIn. Generate a post based on the provided source content. The post must:
+
+1. **Hook**: Start with a compelling question, a surprising statistic, or a bold statement to stop the scroll.
+2. **Value**: Provide 2-3 paragraphs of actionable insights or a key story from the source. Use clear formatting like bullet points or numbered lists where appropriate.
+3. **Tone**: Maintain a professional, knowledgeable, yet conversational tone suitable for a professional network.
+4. **Engagement**: End with an open-ended question to encourage comments and discussion (e.g., 'What's your take on this?', 'How have you approached this?').
+5. **Hashtags**: Include 3-5 relevant, niche hashtags (e.g., #SaaS, #FounderJourney, #B2BMarketing).
+6. **Length**: Keep the post concise and readable, ideally under 1,300 characters.
+
+IMPORTANT OUTPUT FORMAT:
+- Return ONLY the LinkedIn post content itself
+- Do NOT include "LinkedIn Post:", "**", quotes, or any markdown/formatting
+- Just output the plain post text with proper line breaks and hashtags
+- Ensure the post flows naturally and reads professionally
+
+// V2: Integrate niche-specific hashtags from profiles.ts (e.g., niche field) for personalized LinkedIn posts.
+// V2: Enable chat refinement via @linkedin_agent mentions for iterative improvement.`,
+
+    blog: `You are an expert content marketer specializing in SEO-optimized blog posts. Generate a blog post based on the provided source content. The post must:
+
+1. **Title**: Create an engaging, SEO-friendly title (50-60 characters) with a primary keyword.
+2. **Structure**: Include an introduction, 3-4 main sections with H2/H3 subheadings, and a conclusion.
+3. **Content**: Write 800-1,200 words of actionable insights, examples, or stories derived from the source.
+4. **SEO**: Integrate 3-5 relevant keywords naturally, include a meta description (150-160 characters), and suggest 2-3 internal/external links.
+5. **Tone**: Maintain a professional yet approachable tone suitable for thought leadership.
+6. **Call-to-Action**: End with a CTA encouraging engagement.
+7. **Originality**: Create original content inspired by the source, not copied.
+
+Return ONLY a valid JSON object:
+{
+  "title": "SEO-friendly title (50-60 characters)",
+  "content": "Full blog post content with HTML formatting",
+  "metaDescription": "Meta description (150-160 characters)",
+  "keywords": ["keyword1", "keyword2", "keyword3"],
+  "links": [{"url": "...", "title": "..."}]
+}
+
+// V2: Integrate keyword suggestion API for dynamic SEO optimization.
+// V2: Add content scoring and readability analysis.`,
   };
 
   return prompts[agentType as keyof typeof prompts] || prompts.title;
@@ -425,6 +469,21 @@ function buildPrompt(
       prompt += `- Extract the most shareable insights\n`;
       prompt += `- Find controversial or surprising statements\n`;
       prompt += `- Identify actionable tips mentioned\n\n`;
+    } else if (agentType === 'linkedin') {
+      prompt += `🎯 LINKEDIN GENERATION FOCUS:\n`;
+      prompt += `- Extract key professional insights and takeaways\n`;
+      prompt += `- Identify thought leadership opportunities\n`;
+      prompt += `- Find data points, statistics, or business results\n`;
+      prompt += `- Look for actionable advice for professionals\n`;
+      prompt += `- Consider networking and engagement opportunities\n\n`;
+    } else if (agentType === 'blog') {
+      prompt += `🎯 BLOG POST GENERATION FOCUS:\n`;
+      prompt += `- Extract main themes and key insights for comprehensive coverage\n`;
+      prompt += `- Identify SEO opportunities and target keywords\n`;
+      prompt += `- Find actionable tips and detailed examples\n`;
+      prompt += `- Look for data points, statistics, and research findings\n`;
+      prompt += `- Consider educational value and thought leadership angles\n`;
+      prompt += `- Structure content for readability and engagement\n\n`;
     }
   } else {
     prompt += `⚠️ LIMITED CONTEXT MODE - No transcription available\n\n`;

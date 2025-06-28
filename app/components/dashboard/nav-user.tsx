@@ -1,4 +1,3 @@
-import { SignOutButton } from "@clerk/react-router";
 import {
   IconDotsVertical,
   IconLogout,
@@ -22,14 +21,24 @@ import {
   useSidebar,
 } from "~/components/ui/sidebar";
 import { useClerk } from "@clerk/react-router";
+import { useIsMobile } from "~/hooks/use-mobile";
 
 export function NavUser({ user }: any) {
-  const { isMobile } = useSidebar();
-  const userFullName = user.firstName + " " + user.lastName;
-  const userEmail = user.emailAddresses[0].emailAddress;
+  // Check if we're within SidebarProvider context, fallback to mobile hook
+  const sidebarContext = useSidebar();
+  const fallbackMobile = useIsMobile();
+  const isMobile = sidebarContext?.isMobile ?? fallbackMobile;
+
+  // Add null checks for user data
+  if (!user) {
+    return null; // Don't render anything if user is not loaded
+  }
+
+  const userFullName = (user.firstName || "") + " " + (user.lastName || "");
+  const userEmail = user.emailAddresses?.[0]?.emailAddress || "";
   const userInitials =
     (user?.firstName?.charAt(0) || "").toUpperCase() +
-    (user?.lastName?.charAt(0) || "").toUpperCase();
+    (user?.lastName?.charAt(0) || "").toUpperCase() || "U";
   const userProfile = user.imageUrl;
   const { signOut } = useClerk();
 

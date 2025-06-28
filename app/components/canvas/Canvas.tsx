@@ -1,7 +1,7 @@
 import { api } from "convex/_generated/api";
 import type { Id } from "convex/_generated/dataModel";
 import { useAction, useMutation, useQuery } from "convex/react";
-import { Bot, Check, ChevronLeft, ChevronRight, Eye, FileText, GripVertical, Hash, Layers, Map, Palette, Settings2, Share2, Sparkles, Upload, Video, Zap } from "lucide-react";
+import { Bot, Check, ChevronLeft, ChevronRight, Eye, FileText, GripVertical, Hash, Layers, Linkedin, Map as MapIcon, Palette, Settings2, Share2, Sparkles, Upload, Video, Zap } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type DragEvent } from "react";
 import { toast } from "sonner";
 import { PreviewModal } from "~/components/preview/PreviewModal";
@@ -27,10 +27,17 @@ import { ReactFlowWrapper } from "./ReactFlowWrapper";
 import { ThumbnailUploadModal } from "./ThumbnailUploadModal";
 import { VideoNode } from "./VideoNode";
 import { VideoPlayerModal } from "./VideoPlayerModal";
+import { LinkedInNode } from "./LinkedInNode";
+
+import { BlogNode } from "./BlogNode";
+import { SourceNode } from "./SourceNode";
 
 const nodeTypes: NodeTypes = {
   video: VideoNode,
   agent: AgentNode,
+  linkedin: LinkedInNode,
+  blog: BlogNode,
+  source: SourceNode,
 };
 
 function CanvasContent({ projectId }: { projectId: Id<"projects"> }) {
@@ -423,7 +430,7 @@ function InnerCanvas({
 
         // Use regular content generation for other agent types
         const generationResult = await generateContent({
-          agentType: agentNode.data.type as "title" | "description" | "thumbnail" | "tweets",
+          agentType: agentNode.data.type as "title" | "description" | "thumbnail" | "tweets" | "linkedin" | "blog",
           videoId: videoNode?.data.videoId as Id<"videos"> | undefined,
           videoData,
           connectedAgentOutputs,
@@ -828,7 +835,7 @@ function InnerCanvas({
           agentId: agentNode.data.agentId as Id<"agents">,
           userMessage: finalMessage,
           currentDraft: agentNode.data.draft || "",
-          agentType: agentNode.data.type as "title" | "description" | "thumbnail" | "tweets",
+          agentType: agentNode.data.type as "title" | "description" | "thumbnail" | "tweets" | "linkedin" | "blog",
           chatHistory: agentHistory.map(msg => ({
             role: msg.role,
             content: msg.content,
@@ -2204,16 +2211,65 @@ function InnerCanvas({
         return;
       }
 
+      // Special handling for blog type - create source node too
+      if (type === 'blog') {
+        const sourceNodeId = `source_${Date.now()}`;
+        const blogNodeId = `blog_${Date.now()}`;
+        
+        // Create source node
+        const sourceNode: Node = {
+          id: sourceNodeId,
+          type: 'source',
+          position: { x: position.x - 250, y: position.y },
+          data: {
+            content: '',
+            sourceType: 'topic',
+            isScraping: false,
+            error: null,
+          },
+        };
+        
+        // Create blog node without database agent (for now)
+        const blogNode: Node = {
+          id: blogNodeId,
+          type: 'blog',
+          position,
+          data: {
+            type: 'blog',
+            draft: "",
+            status: "idle",
+            connections: [],
+            onGenerate: () => handleGenerate(blogNodeId),
+            onChat: () => handleChatButtonClick(blogNodeId),
+            onView: () => setSelectedNodeForModal(blogNodeId),
+            onRegenerate: () => handleRegenerateClick(blogNodeId),
+          },
+        };
+        
+        // Create edge between source and blog
+        const edgeId = `e${sourceNodeId}-${blogNodeId}`;
+        const newEdge: Edge = {
+          id: edgeId,
+          source: sourceNodeId,
+          target: blogNodeId,
+          animated: enableEdgeAnimations && !isDragging,
+        };
+        
+        setNodes((nds: any) => nds.concat([sourceNode, blogNode]));
+        setEdges((eds: any) => eds.concat(newEdge));
+        return;
+      }
+
       // Create agent in database
       createAgent({
         videoId: videoNode.data.videoId as Id<"videos">,
-        type: type as "title" | "description" | "thumbnail" | "tweets",
+        type: type as "title" | "description" | "thumbnail" | "tweets" | "linkedin" | "blog",
         canvasPosition: position,
       }).then((agentId) => {
-        const nodeId = `agent_${type}_${agentId}`;
+        const nodeId = `${type === 'linkedin' ? 'linkedin' : 'agent'}_${type}_${agentId}`;
         const newNode: Node = {
           id: nodeId,
-          type: "agent",
+          type: type === 'linkedin' ? 'linkedin' : 'agent',
           position,
           data: {
             agentId, // Store the database ID
@@ -2610,6 +2666,22 @@ function InnerCanvas({
                 collapsed={isSidebarCollapsed}
                 color="yellow"
               />
+              <DraggableNode 
+                type="linkedin" 
+                label={isSidebarCollapsed ? "" : "LinkedIn Generator"} 
+                description={isSidebarCollapsed ? "" : "Professional posts for LinkedIn"}
+                icon={<Linkedin className="h-5 w-5" />}
+                collapsed={isSidebarCollapsed}
+                color="blue"
+              />
+              <DraggableNode 
+                type="blog" 
+                label={isSidebarCollapsed ? "" : "Blog Generator"} 
+                description={isSidebarCollapsed ? "" : "SEO-optimized blog posts"}
+                icon={<FileText className="h-5 w-5" />}
+                collapsed={isSidebarCollapsed}
+                color="green"
+              />
             </div>
             
             {!isSidebarCollapsed && (
@@ -2748,7 +2820,7 @@ function InnerCanvas({
                   title="Toggle Mini-map"
                   className="w-full"
                 >
-                  <Map className="h-5 w-5" />
+                  <MapIcon className="h-5 w-5" />
                 </Button>
                 <Button 
                   onClick={() => setEnableEdgeAnimations(!enableEdgeAnimations)}
